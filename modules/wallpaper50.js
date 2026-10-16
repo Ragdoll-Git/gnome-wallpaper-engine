@@ -5,6 +5,7 @@ import GLib from "gi://GLib";
 import Meta from "gi://Meta";
 import * as Main from "resource:///org/gnome/shell/ui/main.js";
 
+import { StaticWallpaper } from "./staticWallpaper.js";
 import { getBackgroundsDir } from "./utils.js";
 
 const RENDERER_WINDOW_PREFIX = "gwe-wallpaper-";
@@ -32,6 +33,7 @@ export class Wallpaper {
     constructor(ext, windowFilter) {
         this._ext = ext;
         this._windowFilter = windowFilter;
+        this._staticWallpaper = new StaticWallpaper();
         this._process = null;
         this._sessionId = null;
         this._sourceActor = null;
@@ -57,6 +59,10 @@ export class Wallpaper {
         if (!filename) return;
 
         const bgDir = getBackgroundsDir();
+        const baseName = filename.substring(0, filename.lastIndexOf("."));
+        const thumbPath = GLib.build_filenamev([bgDir, `${baseName}-thumb.jpg`]);
+        this._staticWallpaper.set(thumbPath);
+
         const videoPath = GLib.build_filenamev([bgDir, filename]);
 
         if (!GLib.getenv("WAYLAND_DISPLAY") || !Meta.WaylandClient?.new_subprocess) {
