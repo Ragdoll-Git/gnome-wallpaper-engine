@@ -19,15 +19,13 @@ function getMonitorBounds(monitors) {
     return { x, y, width: right - x, height: bottom - y };
 }
 
-function getActorLocalBounds(actor, bounds) {
-    const [startValid, x, y] = actor.transform_stage_point(bounds.x, bounds.y);
-    const [endValid, right, bottom] = actor.transform_stage_point(
-        bounds.x + bounds.width,
-        bounds.y + bounds.height
-    );
-    if (!startValid || !endValid) return null;
-
-    return { x, y, width: right - x, height: bottom - y };
+function getRelativeMonitorBounds(bounds, monitor) {
+    return {
+        x: monitor.x - bounds.x,
+        y: monitor.y - bounds.y,
+        width: monitor.width,
+        height: monitor.height,
+    };
 }
 
 export class Wallpaper {
@@ -72,7 +70,9 @@ export class Wallpaper {
             return;
         }
 
-        const monitors = Main.layoutManager.monitors;
+        const monitors = [...Main.layoutManager.monitors].sort(
+            (a, b) => a.x - b.x || a.y - b.y
+        );
         const bounds = getMonitorBounds(monitors);
         if (!bounds) return;
         const sourceMonitor = monitors[0];
@@ -172,7 +172,9 @@ export class Wallpaper {
         if (!title?.startsWith(RENDERER_WINDOW_PREFIX)) return;
         if (title !== `${RENDERER_WINDOW_PREFIX}${this._sessionId}`) return;
 
-        const monitors = Main.layoutManager.monitors;
+        const monitors = [...Main.layoutManager.monitors].sort(
+            (a, b) => a.x - b.x || a.y - b.y
+        );
         const bounds = getMonitorBounds(monitors);
         const sourceMonitor = monitors[0];
         const backgroundGroup = Main.layoutManager._backgroundGroup;
@@ -184,13 +186,10 @@ export class Wallpaper {
         }
 
         try {
-            const sourceBounds = getActorLocalBounds(backgroundGroup, sourceMonitor);
+            const sourceBounds = getRelativeMonitorBounds(bounds, sourceMonitor);
             const localMonitorBounds = monitors.map((monitor) =>
-                getActorLocalBounds(backgroundGroup, monitor)
+                getRelativeMonitorBounds(bounds, monitor)
             );
-            if (!sourceBounds || localMonitorBounds.some((bounds) => !bounds)) {
-                throw new Error("Could not map monitor bounds into GNOME's wallpaper layer.");
-            }
 
             metaWindow.set_type(Meta.WindowType.DESKTOP);
             metaWindow.stick();
@@ -231,13 +230,10 @@ export class Wallpaper {
             });
 
             const sourceX = bounds.x - sourceMonitor.width - 1;
-            const hiddenSourceBounds = getActorLocalBounds(backgroundGroup, {
-                ...sourceMonitor,
-                x: sourceX,
-            });
-            if (!hiddenSourceBounds) {
-                throw new Error("Could not position the hidden wallpaper source.");
-            }
+            const hiddenSourceBounds = {
+                x: -sourceMonitor.width - 1,
+                y: sourceMonitor.y - bounds.y,
+            };
             metaWindow.move_resize_frame(
                 true,
                 sourceX,
