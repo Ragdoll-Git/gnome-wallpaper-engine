@@ -2,8 +2,10 @@ export class WindowUtils {
     static isWallpaperWindow(metaWin) {
         if (!metaWin) return false;
 
+        const title = metaWin.get_title();
         return (
-            metaWin.get_title() === "wallpaper_bg" ||
+            title === "wallpaper_bg" ||
+            title?.startsWith("gwe-wallpaper-") ||
             metaWin.get_wm_class() === "wallpaper_bg"
         );
     }

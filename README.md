@@ -4,9 +4,9 @@
 
 No complex setup. No heavy dependencies. Just mpv, ffmpeg + the extension.
 
-The **simplest and most reliable way** to use live wallpapers on GNOME — fully compatible with **Wayland & X11**.
+Live video wallpapers for **GNOME Shell 45–50**. GNOME Shell 50 uses a dedicated Wayland renderer; earlier versions keep the existing renderer.
 
-Powered by **mpv** for maximum performance, low resource usage, and full format support (MP4, GIF, WebM, MKV…).
+Powered by **mpv** for hardware-accelerated playback and broad format support (MP4, GIF, WebM, MKV…).
 
 If you like this project, consider giving it a star ⭐ — it really helps!
 
@@ -37,7 +37,7 @@ And if you enjoy the project, a ⭐ on GitHub is always appreciated!
 - 🎬 **Integrated Gallery:** Browse and select wallpapers directly from GNOME Settings
 - 🖼️ **Thumbnail Previews:** Automatically generated previews for all wallpapers
 - 📥 **Smart Import:** Add videos with one click and apply instantly
-- 🚀 **GPU Accelerated (enabled by default):** Uses mpv with `hwdec=auto`
+- 🚀 **Hardware decoding:** Uses mpv hardware decoding where available
 - ⚡ **Very Low CPU Usage:** Typically ~1–3%
 - 🔄 **Instant Apply:** Switch wallpapers in real-time
 - 🖥️ **Wayland Ready:** Works reliably where most tools fail
@@ -54,13 +54,12 @@ And if you enjoy the project, a ⭐ on GitHub is always appreciated!
 
 - 🎮 Steam Wallpaper Engine integration (auto-detect and list compatible wallpapers)
 - 🎛️ Advanced playback settings (loop modes, speed, etc.)
-- 🎨 Future rendering engine (without mpv)
 
 ---
 
 ## 🛠 Requirements
 
-You only need **mpv** installed:
+You need **mpv** and **ffmpeg** installed. GNOME Shell 50 uses the dedicated Wayland renderer; GNOME Shell 45–49 keep the existing renderer.
 
 ### Ubuntu / Debian / Zorin OS
 

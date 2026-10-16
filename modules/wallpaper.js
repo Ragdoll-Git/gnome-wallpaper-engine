@@ -1,3 +1,4 @@
+import Cairo from "cairo";
 import Gio from "gi://Gio";
 import GLib from "gi://GLib";
 
@@ -10,10 +11,8 @@ export class Wallpaper {
         this._ext = ext;
         this._windowFilter = windowFilter;
         this._staticWallpaper = new StaticWallpaper();
-
         this._mpvProcess = null;
         this._findWindowTimeoutId = null;
-
         this._wallpaperWindow = null;
         this._raisedSignalId = null;
         this._windowCreatedId = null;
@@ -26,17 +25,14 @@ export class Wallpaper {
         const settings = this._ext._settings;
         const filename = settings.get_string("current-wallpaper");
         if (!filename) return;
-        
-        const bgDir = getBackgroundsDir();
-        
-        const videoPath = GLib.build_filenamev([bgDir, filename]);
 
+        const bgDir = getBackgroundsDir();
+        const videoPath = GLib.build_filenamev([bgDir, filename]);
         const baseName = filename.substring(0, filename.lastIndexOf("."));
         const thumbPath = GLib.build_filenamev([bgDir, `${baseName}-thumb.jpg`]);
-
         this._staticWallpaper.set(thumbPath);
 
-        const cmd = [
+        const command = [
             "mpv",
             "--no-border",
             "--loop=inf",
@@ -59,8 +55,7 @@ export class Wallpaper {
         ];
 
         try {
-            this._mpvProcess = Gio.Subprocess.new(cmd, Gio.SubprocessFlags.NONE);
-
+            this._mpvProcess = Gio.Subprocess.new(command, Gio.SubprocessFlags.NONE);
             let attempts = 0;
 
             const findWindow = () => {
@@ -71,7 +66,6 @@ export class Wallpaper {
 
                 const found = this._applyWindowRules();
                 attempts++;
-
                 if (found || attempts >= 40) {
                     this._findWindowTimeoutId = null;
                     return GLib.SOURCE_REMOVE;
@@ -85,88 +79,83 @@ export class Wallpaper {
                 150,
                 findWindow
             );
-
-        } catch (e) {
-            logError(e);
+        } catch (error) {
+            logError(error);
         }
     }
 
     _applyWindowRules() {
-        const windows = global.get_window_actors();
+        for (const actor of global.get_window_actors()) {
+            const metaWindow = actor.get_meta_window();
+            if (!WindowUtils.isWallpaperWindow(metaWindow)) continue;
 
-        for (const actor of windows) {
-            const metaWin = actor.get_meta_window();
+            metaWindow.lower();
+            metaWindow.stick();
+            metaWindow.focus_on_click = false;
 
-            if (WindowUtils.isWallpaperWindow(metaWin)) {
-                metaWin.lower();
-                metaWin.stick();
-                metaWin.focus_on_click = false;
+            try {
+                metaWindow.set_accept_focus(false);
+            } catch (_) { }
 
-                try {
-                    metaWin.set_accept_focus(false);
-                } catch (_) { }
-
-                if (!this._lowerFixApplied) {
-                    this._lowerFixApplied = true;
-
-                    let count = 0;
-                    GLib.timeout_add(GLib.PRIORITY_DEFAULT, 100, () => {
-                        if (metaWin) metaWin.lower();
-                        count++;
-                        return count < 5;
-                    });
-                }
-
-                GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
-                    try {
-                        metaWin.set_input_region(null);
-                    } catch (_) { }
-                    return GLib.SOURCE_REMOVE;
+            if (!this._lowerFixApplied) {
+                this._lowerFixApplied = true;
+                let count = 0;
+                GLib.timeout_add(GLib.PRIORITY_DEFAULT, 100, () => {
+                    if (metaWindow) metaWindow.lower();
+                    count++;
+                    return count < 5;
                 });
-
-                if (!this._wallpaperWindow) {
-                    this._wallpaperWindow = metaWin;
-
-                    if (this._windowFilter) {
-                        this._windowFilter.addWindow(metaWin);
-                    }
-
-                    this._raisedSignalId = metaWin.connect("raised", () => {
-                        metaWin.lower();
-                    });
-
-                    this._windowCreatedId = global.display.connect('window-created', () => {
-                        if (this._wallpaperWindow) {
-                            this._wallpaperWindow.lower();
-                        }
-                    });
-                }
-
-                return true;
             }
+
+            GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+                try {
+                    metaWindow.set_input_region(new Cairo.Region());
+                } catch (_) { }
+                return GLib.SOURCE_REMOVE;
+            });
+
+            if (!this._wallpaperWindow) {
+                this._wallpaperWindow = metaWindow;
+                this._windowFilter?.addWindow(metaWindow);
+                this._raisedSignalId = metaWindow.connect("raised", () => metaWindow.lower());
+                this._windowCreatedId = global.display.connect("window-created", () => {
+                    if (this._wallpaperWindow) this._wallpaperWindow.lower();
+                });
+            }
+
+            return true;
         }
 
         return false;
     }
 
     stop() {
+        if (this._findWindowTimeoutId) {
+            GLib.source_remove(this._findWindowTimeoutId);
+            this._findWindowTimeoutId = null;
+        }
+
         if (this._mpvProcess) {
             this._mpvProcess.force_exit();
             this._mpvProcess = null;
         }
 
         this._lowerFixApplied = false;
-
         if (this._raisedSignalId && this._wallpaperWindow) {
             this._wallpaperWindow.disconnect(this._raisedSignalId);
             this._raisedSignalId = null;
         }
-
         if (this._windowCreatedId) {
             global.display.disconnect(this._windowCreatedId);
             this._windowCreatedId = null;
         }
+        if (this._wallpaperWindow) {
+            this._windowFilter?.removeWindow(this._wallpaperWindow);
+            this._wallpaperWindow = null;
+        }
+    }
 
-        this._wallpaperWindow = null;
+    destroy() {
+        this.stop();
     }
 }

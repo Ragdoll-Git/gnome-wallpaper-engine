@@ -1,9 +1,11 @@
 import { Extension } from "resource:///org/gnome/shell/extensions/extension.js";
 import * as Main from "resource:///org/gnome/shell/ui/main.js";
+import { PACKAGE_VERSION } from "resource:///org/gnome/shell/misc/config.js";
 import GLib from "gi://GLib";
 
 import { Indicator } from "./indicator.js";
-import { Wallpaper } from "./modules/wallpaper.js";
+import { Wallpaper as LegacyWallpaper } from "./modules/wallpaper.js";
+import { Wallpaper as Gnome50Wallpaper } from "./modules/wallpaper50.js";
 import { AutoPause } from "./modules/autoPause.js";
 import { WindowFilter } from "./modules/windowFilter.js";
 
@@ -11,7 +13,7 @@ import { debug } from "./modules/utils.js";
 
 export default class WallpaperExtension extends Extension {
     enable() {
-        this._mpvExists = GLib.find_program_in_path('mpv');
+        this._mpvExists = GLib.find_program_in_path("mpv");
         this._ffmpegExists = GLib.find_program_in_path('ffmpeg');
         
         let missing = [];
@@ -19,7 +21,7 @@ export default class WallpaperExtension extends Extension {
         if (!this._mpvExists) {
             missing.push("'mpv'");
         }
-        
+
         if (!this._ffmpegExists) {
             missing.push("'ffmpeg'");
         }
@@ -35,11 +37,14 @@ export default class WallpaperExtension extends Extension {
         this._settings = this.getSettings("org.gnome.shell.extensions.gnome-wallpaper-engine");
 
         this._indicator = null;
-        
+
         this._windowFilter = new WindowFilter();
         this._windowFilter.enable();
-
-        this._wallpaper = new Wallpaper(this, this._windowFilter);
+        const shellMajorVersion = Number.parseInt(PACKAGE_VERSION, 10);
+        const WallpaperRenderer = shellMajorVersion >= 50
+            ? Gnome50Wallpaper
+            : LegacyWallpaper;
+        this._wallpaper = new WallpaperRenderer(this, this._windowFilter);
         
         this._indicatorSignalId = this._settings.connect(
             "changed::show-indicator",
@@ -92,8 +97,13 @@ export default class WallpaperExtension extends Extension {
         }
 
         if (this._wallpaper) {
-            this._wallpaper.stop();
+            this._wallpaper.destroy();
             this._wallpaper = null;
+        }
+
+        if (this._windowFilter) {
+            this._windowFilter.disable();
+            this._windowFilter = null;
         }
 
         if (this._indicator) {
