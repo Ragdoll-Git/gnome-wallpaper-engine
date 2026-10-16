@@ -5,7 +5,6 @@ import GLib from "gi://GLib";
 import Meta from "gi://Meta";
 import * as Main from "resource:///org/gnome/shell/ui/main.js";
 
-import { StaticWallpaper } from "./staticWallpaper.js";
 import { getBackgroundsDir } from "./utils.js";
 
 const RENDERER_WINDOW_PREFIX = "gwe-wallpaper-";
@@ -20,13 +19,22 @@ function getMonitorBounds(monitors) {
     return { x, y, width: right - x, height: bottom - y };
 }
 
+function getActorLocalBounds(actor, bounds) {
+    const [startValid, x, y] = actor.transform_stage_point(bounds.x, bounds.y);
+    const [endValid, right, bottom] = actor.transform_stage_point(
+        bounds.x + bounds.width,
+        bounds.y + bounds.height
+    );
+    if (!startValid || !endValid) return null;
+
+    return { x, y, width: right - x, height: bottom - y };
+}
+
 export class Wallpaper {
     constructor(ext, windowFilter) {
         this._ext = ext;
         this._windowFilter = windowFilter;
-        this._staticWallpaper = new StaticWallpaper();
         this._process = null;
-        this._waylandClient = null;
         this._sessionId = null;
         this._sourceActor = null;
         this._clones = [];
@@ -52,9 +60,6 @@ export class Wallpaper {
 
         const bgDir = getBackgroundsDir();
         const videoPath = GLib.build_filenamev([bgDir, filename]);
-        const baseName = filename.substring(0, filename.lastIndexOf("."));
-        const thumbPath = GLib.build_filenamev([bgDir, `${baseName}-thumb.jpg`]);
-        this._staticWallpaper.set(thumbPath);
 
         if (!GLib.getenv("WAYLAND_DISPLAY") || !Meta.WaylandClient?.new_subprocess) {
             Main.notify("Gnome Live Wallpaper", "GNOME Shell 50 on Wayland is required.");
@@ -86,9 +91,11 @@ export class Wallpaper {
             "--force-window=immediate",
             `--title=${windowTitle}`,
             `--geometry=${sourceMonitor.width}x${sourceMonitor.height}+0+0`,
-            "--keepaspect=no",
+            "--keepaspect=yes",
             "--keepaspect-window=no",
             "--no-auto-window-resize",
+            "--panscan=1.0",
+            "--video-unscaled=no",
             "--osc=no",
             "--osd-bar=no",
             "--input-default-bindings=no",
@@ -103,16 +110,16 @@ export class Wallpaper {
                 flags: Gio.SubprocessFlags.NONE,
             });
             try {
-                this._waylandClient = Meta.WaylandClient.new_subprocess(
+                const waylandClient = Meta.WaylandClient.new_subprocess(
                     global.context,
                     launcher,
                     argv
                 );
+                this._process = waylandClient.get_subprocess();
             } finally {
                 if (launcher.close) launcher.close();
             }
 
-            this._process = this._waylandClient.get_subprocess();
             if (!this._process) throw new Error("Could not start the mpv Wayland client");
 
             const process = this._process;
@@ -126,7 +133,6 @@ export class Wallpaper {
                 if (this._process !== process) return;
 
                 this._process = null;
-                this._waylandClient = null;
                 this._sessionId = null;
                 this._sourceActor = null;
                 this._destroyClones();
@@ -170,13 +176,22 @@ export class Wallpaper {
         const bounds = getMonitorBounds(monitors);
         const sourceMonitor = monitors[0];
         const backgroundGroup = Main.layoutManager._backgroundGroup;
+
         if (!bounds || !sourceMonitor || !backgroundGroup) {
-            Main.notify("Gnome Live Wallpaper", "GNOME's background group is unavailable.");
+            Main.notify("Gnome Live Wallpaper", "GNOME's wallpaper layer is unavailable.");
             this.stop();
             return;
         }
 
         try {
+            const sourceBounds = getActorLocalBounds(backgroundGroup, sourceMonitor);
+            const localMonitorBounds = monitors.map((monitor) =>
+                getActorLocalBounds(backgroundGroup, monitor)
+            );
+            if (!sourceBounds || localMonitorBounds.some((bounds) => !bounds)) {
+                throw new Error("Could not map monitor bounds into GNOME's wallpaper layer.");
+            }
+
             metaWindow.set_type(Meta.WindowType.DESKTOP);
             metaWindow.stick();
             metaWindow.focus_on_click = false;
@@ -195,24 +210,34 @@ export class Wallpaper {
                 sourceMonitor.width,
                 sourceMonitor.height
             );
-            windowActor.set_position(sourceMonitor.x, sourceMonitor.y);
-            windowActor.set_size(sourceMonitor.width, sourceMonitor.height);
+            windowActor.set_position(sourceBounds.x, sourceBounds.y);
+            windowActor.set_size(sourceBounds.width, sourceBounds.height);
             this._sourceActor = windowActor;
             const parent = windowActor.get_parent();
             if (parent) parent.remove_child(windowActor);
             backgroundGroup.add_child(windowActor);
+            windowActor.set_opacity(255);
             windowActor.set_reactive(false);
 
-            this._clones = monitors.map((monitor) => {
+            this._clones = localMonitorBounds.map((localBounds) => {
                 const clone = new Clutter.Clone({ source: windowActor });
-                clone.set_position(monitor.x, monitor.y);
-                clone.set_size(monitor.width, monitor.height);
+
+                clone.set_position(localBounds.x, localBounds.y);
+                clone.set_size(localBounds.width, localBounds.height);
+                clone.set_clip_to_allocation(true);
                 clone.set_reactive(false);
                 backgroundGroup.add_child(clone);
                 return clone;
             });
 
             const sourceX = bounds.x - sourceMonitor.width - 1;
+            const hiddenSourceBounds = getActorLocalBounds(backgroundGroup, {
+                ...sourceMonitor,
+                x: sourceX,
+            });
+            if (!hiddenSourceBounds) {
+                throw new Error("Could not position the hidden wallpaper source.");
+            }
             metaWindow.move_resize_frame(
                 true,
                 sourceX,
@@ -220,7 +245,7 @@ export class Wallpaper {
                 sourceMonitor.width,
                 sourceMonitor.height
             );
-            windowActor.set_position(sourceX, sourceMonitor.y);
+            windowActor.set_position(hiddenSourceBounds.x, hiddenSourceBounds.y);
             metaWindow.lower();
             this._windowFilter?.addWindow(metaWindow);
 
@@ -252,7 +277,6 @@ export class Wallpaper {
         this._sourceActor = null;
         if (this._process) this._process.force_exit();
         this._process = null;
-        this._waylandClient = null;
     }
 
     _destroyClones() {
