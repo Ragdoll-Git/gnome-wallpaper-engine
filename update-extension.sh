@@ -2,18 +2,16 @@
 
 set -e  # stoppt bei Fehlern
 
-EXT_DIR="$HOME/.local/share/gnome-shell/extensions/gnome-wallpaper-engine@gjs.com"
-PROJECT_DIR="."
-ZIP_FILE="./gnome-wallpaper-engine@gjs.com.zip"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+ZIP_FILE="$SCRIPT_DIR/gnome-wallpaper-engine@gjs.com.zip"
 
-echo "🧹 Entferne alte Extension..."
-rm -rf "$EXT_DIR"
+cd "$SCRIPT_DIR"
 
 echo "📦 Erstelle Release ZIP..."
-"$PROJECT_DIR/create-release-zip.sh"
+"$SCRIPT_DIR/create-release-zip.sh"
 
 echo "📥 Installiere Extension..."
-gnome-extensions install "$ZIP_FILE"
+gnome-extensions install --force "$ZIP_FILE"
 
 echo "🚪 Logging out..."
 

@@ -4,9 +4,9 @@
 
 No complex setup. No heavy dependencies. Just mpv, ffmpeg + the extension.
 
-The **simplest and most reliable way** to use live wallpapers on GNOME — fully compatible with **Wayland & X11**.
+Live video wallpapers for **GNOME Shell 45–50**. Multi-monitor playback and click-through to DING desktop icons are supported only on **GNOME Shell 50 Wayland**. GNOME Shell 45–49 continue to use the existing renderer and do not include these features.
 
-Powered by **mpv** for maximum performance, low resource usage, and full format support (MP4, GIF, WebM, MKV…).
+Powered by **mpv** for hardware-accelerated playback and broad format support (MP4, GIF, WebM, MKV…).
 
 If you like this project, consider giving it a star ⭐ — it really helps!
 
@@ -14,7 +14,9 @@ If you like this project, consider giving it a star ⭐ — it really helps!
 
 If you’d like to support the project, you can do so here:
 
-[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/achu94)
+<a href="https://nowpayments.io/donation?api_key=EWJ623W-6JTM04F-JC4F777-AR6TW2K" target="_blank" rel="noreferrer noopener"><img src="https://nowpayments.io/images/embeds/donation-button-white.svg" width="100" alt="Donate with NOWPayments"></a>
+&nbsp;&nbsp;
+<a href="https://ko-fi.com/achu94" target="_blank" rel="noreferrer noopener"><img src="https://ko-fi.com/img/githubbutton_sm.svg" width="160" alt="Support development on Ko-fi"></a>
 
 I’ll also be sharing development updates, progress, and behind-the-scenes work on Ko-fi.
 
@@ -37,7 +39,7 @@ And if you enjoy the project, a ⭐ on GitHub is always appreciated!
 - 🎬 **Integrated Gallery:** Browse and select wallpapers directly from GNOME Settings
 - 🖼️ **Thumbnail Previews:** Automatically generated previews for all wallpapers
 - 📥 **Smart Import:** Add videos with one click and apply instantly
-- 🚀 **GPU Accelerated (enabled by default):** Uses mpv with `hwdec=auto`
+- 🚀 **Hardware decoding:** Uses mpv hardware decoding where available
 - ⚡ **Very Low CPU Usage:** Typically ~1–3%
 - 🔄 **Instant Apply:** Switch wallpapers in real-time
 - 🖥️ **Wayland Ready:** Works reliably where most tools fail
@@ -54,13 +56,12 @@ And if you enjoy the project, a ⭐ on GitHub is always appreciated!
 
 - 🎮 Steam Wallpaper Engine integration (auto-detect and list compatible wallpapers)
 - 🎛️ Advanced playback settings (loop modes, speed, etc.)
-- 🎨 Future rendering engine (without mpv)
 
 ---
 
 ## 🛠 Requirements
 
-You only need **mpv** installed:
+You need **mpv** and **ffmpeg** installed. GNOME Shell 50 uses the dedicated Wayland renderer; GNOME Shell 45–49 keep the existing renderer.
 
 ### Ubuntu / Debian / Zorin OS
 
