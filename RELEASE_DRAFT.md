@@ -1,33 +1,27 @@
-# v1.2.2 — GNOME 50 Wayland Playback Update
+# v1.3.0 — GNOME 50 Wayland Playback Update
 
-> This took quite a few attempts to get right with GNOME Shell 50. If this release is useful to you, a small [donation](https://ko-fi.com/achu94) helps me keep improving it. Thank you for your support!
+After several attempts to keep the extension working smoothly across GNOME Shell versions, I decided to focus this release on GNOME 50. Its major changes exposed new issues in the extension, so this release addresses the most disruptive GNOME 50 Wayland issues and adds the requested multi-monitor support. The existing renderer for GNOME Shell 45–49 remains unchanged.
 
-## 🚀 Changelog (v1.2.2)
+If this GNOME 50 Wayland update is useful to you, you can support its continued development:
 
-### 🛠 Improvements
+<div>
+	<a href="https://nowpayments.io/donation?api_key=EWJ623W-6JTM04F-JC4F777-AR6TW2K" target="_blank" rel="noreferrer noopener"><img src="https://nowpayments.io/images/embeds/donation-button-white.svg" width="100" alt="Donate with NOWPayments"></a>
+	&nbsp;&nbsp;
+	<a href="https://ko-fi.com/achu94" width="100" target="_blank" rel="noreferrer noopener"><img src="https://ko-fi.com/img/githubbutton_sm.svg" width="160" alt="Support development on Ko-fi"></a>
+</div>
 
-- **Multi-monitor renderer:** GNOME Shell creates a background clone for each connected monitor.
-- **Shell-managed rendering:** The clones are inserted above the static wallpaper actors.
-- **Playback dependencies:** mpv and ffmpeg remain required. ClutterGst and GStreamer packages are not needed.
+## 🚀 Changelog (v1.3.0)
 
-### 🔧 Bugfixes
+### GNOME 50 Wayland
 
-- **GNOME 50 playback startup:** Avoids the Clutter 1.0 versus 18 namespace conflict by keeping video playback in mpv and integrating its window content with GNOME Shell.
-- **Renderer window handling:** The mpv source stays mapped as a desktop-type window so GNOME Shell can clone it into the background layer.
+These improvements are specific to the GNOME Shell 50 Wayland renderer. GNOME Shell 45–49 continue to use the existing renderer.
 
-## ⚡ Notes
+- **Multi-monitor playback:** Live wallpapers now appear across connected monitors, with rendering adapted to each display.
+- **Fixed desktop background:** The mpv window stays behind desktop content and can no longer be dragged or take focus.
+- **Clickable desktop icons:** Mouse input passes through the wallpaper, keeping DING desktop icons visible and clickable.
+- **Reliable playback startup:** The GNOME 50 renderer uses mpv and does not require ClutterGst or GStreamer.
 
-This build targets **GNOME Shell 50 on Wayland**. X11 and other GNOME Shell versions are not supported by this renderer yet. Hardware decoding depends on the installed mpv build, GPU drivers, and video codec.
-
-## 🔗 Issues targeted (not yet verified)
-
-The following issues motivated this renderer update. They should not be considered fixed until the behavior is verified on the supported GNOME Shell 50 Wayland setup.
-
-- #9 — Prevent duplicate or orphaned mpv processes during wallpaper changes.
-- #11 — Improve video scaling across displays with different aspect ratios.
-- #14 — Display the live wallpaper across multiple monitors.
-- #22 — Keep the wallpaper fixed as a background instead of an interactive window.
-- #24 — Keep DING desktop icons visible and interactive with the live wallpaper enabled.
+Hardware decoding depends on the installed mpv build, GPU drivers, and video codec.
 
 ## ⚙️ Prerequisites
 
@@ -47,6 +41,3 @@ This extension requires **mpv** and **ffmpeg**:
 3. Log out and back in on Wayland.
 4. Enable the extension in the Extensions app.
 
-## ☕ Support the Project
-
-If you enjoy the project, consider supporting it at <https://ko-fi.com/achu94>.

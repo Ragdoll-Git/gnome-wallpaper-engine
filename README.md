@@ -4,7 +4,7 @@
 
 No complex setup. No heavy dependencies. Just mpv, ffmpeg + the extension.
 
-Live video wallpapers for **GNOME Shell 45–50**. GNOME Shell 50 uses a dedicated Wayland renderer; earlier versions keep the existing renderer.
+Live video wallpapers for **GNOME Shell 45–50**. Multi-monitor playback and click-through to DING desktop icons are supported only on **GNOME Shell 50 Wayland**. GNOME Shell 45–49 continue to use the existing renderer and do not include these features.
 
 Powered by **mpv** for hardware-accelerated playback and broad format support (MP4, GIF, WebM, MKV…).
 
@@ -14,7 +14,9 @@ If you like this project, consider giving it a star ⭐ — it really helps!
 
 If you’d like to support the project, you can do so here:
 
-[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/achu94)
+<a href="https://nowpayments.io/donation?api_key=EWJ623W-6JTM04F-JC4F777-AR6TW2K" target="_blank" rel="noreferrer noopener"><img src="https://nowpayments.io/images/embeds/donation-button-white.svg" width="100" alt="Donate with NOWPayments"></a>
+&nbsp;&nbsp;
+<a href="https://ko-fi.com/achu94" target="_blank" rel="noreferrer noopener"><img src="https://ko-fi.com/img/githubbutton_sm.svg" width="160" alt="Support development on Ko-fi"></a>
 
 I’ll also be sharing development updates, progress, and behind-the-scenes work on Ko-fi.
 
