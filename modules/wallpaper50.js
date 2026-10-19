@@ -2,6 +2,7 @@ import Cairo from "cairo";
 import Clutter from "gi://Clutter";
 import Gio from "gi://Gio";
 import GLib from "gi://GLib";
+import GObject from "gi://GObject";
 import Meta from "gi://Meta";
 import * as Main from "resource:///org/gnome/shell/ui/main.js";
 
@@ -9,6 +10,13 @@ import { StaticWallpaper } from "./staticWallpaper.js";
 import { getBackgroundsDir } from "./utils.js";
 
 const RENDERER_WINDOW_PREFIX = "gwe-wallpaper-";
+
+// Mutter skips CPU culling for actors with an active effect. Without this,
+// the off-screen source is culled as fully obscured on fractionally scaled
+// monitors, so mpv stops receiving frames and the clones freeze.
+const NoCullEffect = GObject.registerClass(
+    class NoCullEffect extends Clutter.Effect {}
+);
 
 function getMonitorBounds(monitors) {
     if (!monitors.length) return null;
@@ -223,6 +231,7 @@ export class Wallpaper {
             backgroundGroup.add_child(windowActor);
             windowActor.set_opacity(255);
             windowActor.set_reactive(false);
+            windowActor.add_effect_with_name("gwe-no-cull", new NoCullEffect());
 
             this._clones = localMonitorBounds.map((localBounds) => {
                 const clone = new Clutter.Clone({ source: windowActor });
