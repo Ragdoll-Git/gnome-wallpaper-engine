@@ -6,3 +6,7 @@ gnome-wallpaper-engine@gjs.com.zip
 
 # System-Müll
 .DS_Store
+
+# lokale Release-Dateien
+RELEASE_DRAFT.md
+create-release-zip.sh
